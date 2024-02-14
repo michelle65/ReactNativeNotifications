@@ -1,7 +1,7 @@
+import React, { useEffect, useRef } from "react";
 import { StatusBar } from "expo-status-bar";
-import { StyleSheet, Text, View } from "react-native";
-import * as Notifications from "expo-notifications";
-import { useEffect } from "react";
+import { StyleSheet, Text, View, Button } from "react-native";
+import * as Notifications from 'expo-notifications';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => {
@@ -14,28 +14,32 @@ Notifications.setNotificationHandler({
 });
 
 export default function App() {
-  useEffect(() => {
-    const subscription = Notifications.addNotificationHandler(
-      (notification) => {
-        console.log("NOTIFICATION RECEIVED");
-        console.log(notification);
-        const userName = notification.request.content.data.userName;
-        console.log(userName)
-      }
-    );
+  const notificationHandlerSubscription = useRef();
+  const notificationResponseSubscription = useRef();
 
-    Notifications.addNotificationResponseReceivedListener((response)=>{
+  useEffect(() => {
+    notificationHandlerSubscription.current = Notifications.setNotificationHandler((notification) => {
+      console.log("NOTIFICATION RECEIVED");
+      console.log(notification);
+      const userName = notification.request.content.data.userName;
+      console.log(userName)
+    });
+
+    notificationResponseSubscription.current = Notifications.addNotificationResponseReceivedListener((response) => {
       console.log("NOTIFICATION RESPONSE RECEIVED");
-        console.log(response);
+      console.log(response);
+      const userName = response.notification.request.content.data.userName;
+      console.log(userName);
     });
 
     return () => {
-      subscription.remove();
-      subscription1.remove();
+      notificationHandlerSubscription.current.remove();
+      notificationResponseSubscription.current.remove();
     };
   }, []);
+
   function scheduleNotificationHandler() {
-    Notifications.scheduleNotificationHandler({
+    Notifications.scheduleNotificationAsync({
       content: {
         title: "My first local notification.",
         body: "This is the body of the notification.",
@@ -46,6 +50,7 @@ export default function App() {
       },
     });
   }
+
   return (
     <View style={styles.container}>
       <Button
